@@ -16,18 +16,9 @@ Cette activation est un parametrage du depot, pas un serveur a administrer.
 
 Si le job GitHub Actions echoue avec `Ensure GitHub Pages has been enabled`, cela signifie que cette etape n'a pas encore ete faite.
 
-### 1 bis. Autoriser une branche de prototype
+### 1 bis. Comprendre les branches
 
-GitHub cree aussi un environnement `github-pages`. S'il autorise seulement `main`, un run lance depuis une branche `cursor/**` construit bien le site mais echoue avant le job `deploy`.
-
-Pour tester une branche avant merge:
-
-1. ouvrir **Settings > Environments** ;
-2. cliquer sur **github-pages** ;
-3. dans **Deployment branches and tags**, ajouter le pattern de branche `cursor/*`, ou choisir temporairement toutes les branches ;
-4. relancer le workflow echoue.
-
-Si cette etape n'est pas faite, le deploiement fonctionnera quand meme apres merge sur `main`.
+GitHub cree aussi un environnement `github-pages`. Dans ce depot, il autorise `main`; le workflow construit donc les pull requests pour controle, mais ne publie le site qu'apres merge sur `main`.
 
 ### 2. Deployer
 
@@ -36,7 +27,7 @@ Le workflow `.github/workflows/deploy-web.yml` construit automatiquement `apps/w
 Il se lance:
 
 - automatiquement a chaque push sur `main` ;
-- automatiquement a chaque push sur une branche `cursor/**` pour tester un prototype avant merge ;
+- automatiquement en build de controle sur les pull requests vers `main` ;
 - manuellement via **Actions > Deploy web prototype > Run workflow**.
 
 ### 3. Ouvrir sur mobile
@@ -47,7 +38,7 @@ Une fois le workflow termine, l'URL apparait dans le resume du job **deploy**. P
 https://piraog.github.io/cartov2/
 ```
 
-Il suffit ensuite de l'ouvrir depuis le navigateur du telephone. Pendant la phase prototype, l'URL affiche la derniere branche deployee par le workflow.
+Il suffit ensuite de l'ouvrir depuis le navigateur du telephone. L'URL affiche la derniere version deployee depuis `main`.
 
 ## Pourquoi cette option convient maintenant
 
