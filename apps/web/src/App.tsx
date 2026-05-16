@@ -65,17 +65,66 @@ type ScoreResult = {
   children?: ScoreResult[];
 };
 
+type PreciseControlSpec =
+  | {
+      mode: "max" | "min";
+      label: string;
+      indicator: string;
+      min: number;
+      max: number;
+      step: number;
+      defaultValue: number;
+      helper: string;
+    }
+  | {
+      mode: "range";
+      label: string;
+      indicator: string;
+      min: number;
+      max: number;
+      step: number;
+      defaultMin: number;
+      defaultMax: number;
+      helper: string;
+    }
+  | {
+      mode: "categoryMax";
+      label: string;
+      indicator: string;
+      categories: string[];
+      defaultValue: string;
+      helper: string;
+    };
+
+type CriterionSetting = {
+  enabled: boolean;
+  priority: number;
+  value?: number;
+  minValue?: number;
+  maxValue?: number;
+  categoryValue?: string;
+};
+
+type CriterionScore = {
+  criterion: Criterion;
+  score: number | null;
+  score10: number | null;
+  priority: number;
+  enabled: boolean;
+  missing: boolean;
+  excluded: boolean;
+  outsidePreciseInterval: boolean;
+  preciseIndicator?: string;
+  preciseValue?: string | number;
+  result: ScoreResult;
+};
+
 type TerritoryScore = TerritorySample & {
   globalScore: number;
+  globalScore10: number;
+  inInterestingInterval: boolean;
   categoryScores: Record<string, number>;
-  criterionScores: Array<{
-    criterion: Criterion;
-    score: number | null;
-    weight: number;
-    missing: boolean;
-    excluded: boolean;
-    result: ScoreResult;
-  }>;
+  criterionScores: CriterionScore[];
 };
 
 const criteria = catalog.criteria as Criterion[];
@@ -86,22 +135,147 @@ const territories = catalog.sample_territories as TerritorySample[];
 const indicatorByKey = new Map(indicators.map((indicator) => [indicator.key, indicator]));
 const sourceByKey = new Map(sources.map((source) => [source.key, source]));
 
+const preciseControls: Record<string, PreciseControlSpec> = {
+  budget_immobilier: {
+    mode: "max",
+    label: "Prix maximum",
+    indicator: "prix_m2_median",
+    min: 1200,
+    max: 8000,
+    step: 100,
+    defaultValue: 4500,
+    helper: "Les communes sous ce plafond restent dans l'intervalle interessant.",
+  },
+  accessibilite_paris: {
+    mode: "max",
+    label: "Temps maximum Paris",
+    indicator: "temps_total_paris_train_voiture_min",
+    min: 60,
+    max: 420,
+    step: 15,
+    defaultValue: 300,
+    helper: "Temps total train depuis Paris plus voiture jusqu'a la commune.",
+  },
+  acces_gare: {
+    mode: "max",
+    label: "Temps max vers gare",
+    indicator: "temps_voiture_gare_plus_proche_min",
+    min: 5,
+    max: 90,
+    step: 5,
+    defaultValue: 35,
+    helper: "Trajet voiture depuis la commune vers la gare la plus proche.",
+  },
+  proximite_ville_moyenne: {
+    mode: "range",
+    label: "Temps ideal vers ville > 30k",
+    indicator: "temps_voiture_ville_30000_min",
+    min: 0,
+    max: 90,
+    step: 5,
+    defaultMin: 15,
+    defaultMax: 45,
+    helper: "Intervalle cible pour rester proche des services sans etre trop urbain.",
+  },
+  densite_equilibree: {
+    mode: "range",
+    label: "Densite cible",
+    indicator: "densite_population",
+    min: 5,
+    max: 1200,
+    step: 5,
+    defaultMin: 30,
+    defaultMax: 180,
+    helper: "Habitants par km2: ni trop isole, ni trop dense.",
+  },
+  residences_secondaires: {
+    mode: "min",
+    label: "Part minimale",
+    indicator: "part_residences_secondaires",
+    min: 0,
+    max: 50,
+    step: 1,
+    defaultValue: 8,
+    helper: "Repere une attractivite deja visible pour les residences secondaires.",
+  },
+  nature: {
+    mode: "min",
+    label: "Score nature minimum",
+    indicator: "proximite_nature_score",
+    min: 0,
+    max: 100,
+    step: 5,
+    defaultValue: 55,
+    helper: "Proxy de proximite mer, montagne, foret ou espaces naturels.",
+  },
+  risque_inondation: {
+    mode: "categoryMax",
+    label: "Risque maximum accepte",
+    indicator: "risque_inondation_niveau",
+    categories: ["aucun", "faible", "moyen", "fort"],
+    defaultValue: "moyen",
+    helper: "Les niveaux au-dessus du seuil deviennent defavorables.",
+  },
+  services: {
+    mode: "min",
+    label: "Services minimum a 30 km",
+    indicator: "equipements_services_30km",
+    min: 0,
+    max: 300,
+    step: 10,
+    defaultValue: 100,
+    helper: "Nombre d'equipements et services accessibles dans l'environnement proche.",
+  },
+  rayonnement_culturel: {
+    mode: "min",
+    label: "Festivals minimum",
+    indicator: "festivals_30km",
+    min: 0,
+    max: 10,
+    step: 1,
+    defaultValue: 3,
+    helper: "Evenements recurrents dans un rayon de 30 km.",
+  },
+  potentiel_viticole: {
+    mode: "min",
+    label: "Surface viticole minimale",
+    indicator: "surface_vigne_pct",
+    min: 0,
+    max: 30,
+    step: 1,
+    defaultValue: 5,
+    helper: "Part de surfaces viticoles: proxy simple de terroir viticole.",
+  },
+  climat_confortable: {
+    mode: "range",
+    label: "Temperature moyenne cible",
+    indicator: "temperature_moyenne_annuelle",
+    min: 7,
+    max: 22,
+    step: 0.5,
+    defaultMin: 12,
+    defaultMax: 17,
+    helper: "Temperature moyenne annuelle souhaitee.",
+  },
+};
+
 export function App() {
-  const [weights, setWeights] = useState<Record<string, number>>(
-    Object.fromEntries(criteria.map((criterion) => [criterion.key, criterion.default_weight])),
+  const [settings, setSettings] = useState<Record<string, CriterionSetting>>(() =>
+    Object.fromEntries(criteria.map((criterion) => [criterion.key, createInitialSetting(criterion)])),
   );
   const [selectedCode, setSelectedCode] = useState(territories[0].code);
 
   const rankedTerritories = useMemo(
     () =>
       territories
-        .map((territory) => scoreTerritory(territory, weights))
+        .map((territory) => scoreTerritory(territory, settings))
         .sort((a, b) => b.globalScore - a.globalScore),
-    [weights],
+    [settings],
   );
 
   const selectedTerritory = rankedTerritories.find((territory) => territory.code === selectedCode) ?? rankedTerritories[0];
-  const topCriteria = [...selectedTerritory.criterionScores]
+  const activeCriteria = selectedTerritory.criterionScores.filter((criterionScore) => criterionScore.enabled);
+  const topCriteria = [...activeCriteria]
     .filter((criterionScore) => criterionScore.score !== null)
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 7);
@@ -125,30 +299,24 @@ export function App() {
         <section className="panel">
           <div className="panel-title">
             <SlidersHorizontal size={18} />
-            <h2>Criteres ponderables</h2>
+            <h2>Criteres precis</h2>
           </div>
+          <p className="panel-help">
+            Active les sous-options, donne une importance de 1 a 10, puis traduis le critere en valeur concrete.
+          </p>
           <div className="criteria-list">
             {criteria.map((criterion) => (
-              <label className="criterion" key={criterion.key}>
-                <span>
-                  <strong>{criterion.name}</strong>
-                  <small>{criterion.category}</small>
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  value={weights[criterion.key]}
-                  onChange={(event) =>
-                    setWeights((current) => ({
-                      ...current,
-                      [criterion.key]: Number(event.target.value),
-                    }))
-                  }
-                />
-                <em>poids {weights[criterion.key].toFixed(1)}</em>
-              </label>
+              <CriterionControl
+                criterion={criterion}
+                key={criterion.key}
+                setting={settings[criterion.key]}
+                onChange={(nextSetting) =>
+                  setSettings((current) => ({
+                    ...current,
+                    [criterion.key]: nextSetting,
+                  }))
+                }
+              />
             ))}
           </div>
         </section>
@@ -158,15 +326,15 @@ export function App() {
         <header className="hero">
           <div>
             <p className="eyebrow">Decision multi-criteres</p>
-            <h2>Identifier des territoires pour une residence secondaire</h2>
+            <h2>Shader de favorabilite et villes candidates</h2>
             <p>
-              Les scores affiches sont calcules dans le navigateur a partir du catalogue JSON: indicateurs, sources et
-              regles de transformation sont les memes objets que ceux prevus pour l'API.
+              La carte affiche un shader vert/rouge calcule avec les criteres selectionnes. Vert indique les zones les
+              plus favorables dans l'intervalle choisi; rouge signale les zones les moins adaptees ou hors seuil.
             </p>
           </div>
           <div className="hero-cards">
             <InfoCard icon={<Database size={18} />} value={String(indicators.length)} label="indicateurs" />
-            <InfoCard icon={<FlaskConical size={18} />} value={String(criteria.length)} label="criteres calcules" />
+            <InfoCard icon={<FlaskConical size={18} />} value={String(activeCriteria.length)} label="criteres actifs" />
           </div>
         </header>
 
@@ -174,13 +342,20 @@ export function App() {
           <section className="map-panel">
             <div className="map-header">
               <div>
-                <p className="eyebrow">Carte interactive</p>
-                <h3>Communes candidates</h3>
+                <p className="eyebrow">Carte shader</p>
+                <h3>Zones favorables et villes candidates</h3>
               </div>
               <span className="legend">
-                <i /> Score global
+                <i /> Rouge defavorable - vert favorable
               </span>
             </div>
+
+            <CityRankingStrip
+              territories={rankedTerritories}
+              selectedCode={selectedTerritory.code}
+              onSelect={setSelectedCode}
+            />
+
             <CandidateMap
               territories={rankedTerritories}
               selectedCode={selectedTerritory.code}
@@ -192,10 +367,12 @@ export function App() {
             <p className="eyebrow">Fiche territoire</p>
             <h3>{selectedTerritory.name}</h3>
             <div className="score-summary">
-              <div className="score-ring">{Math.round(selectedTerritory.globalScore)}</div>
+              <div className="score-ring">{selectedTerritory.globalScore10}/10</div>
               <div>
                 <strong>Score pondere</strong>
-                <span>Calcule sur {selectedTerritory.criterionScores.length} criteres actifs</span>
+                <span>
+                  {selectedTerritory.inInterestingInterval ? "Dans l'intervalle interessant" : "Hors d'au moins un seuil"}
+                </span>
               </div>
             </div>
             <p>{selectedTerritory.summary}</p>
@@ -208,7 +385,7 @@ export function App() {
                   onClick={() => scrollToCriterion(criterionScore.criterion.key)}
                 >
                   <span>{criterionScore.criterion.name}</span>
-                  <strong>{Math.round(criterionScore.score ?? 0)}</strong>
+                  <strong>{criterionScore.score10}/10</strong>
                 </button>
               ))}
             </div>
@@ -220,17 +397,20 @@ export function App() {
         <section className="criteria-table">
           <div className="panel-title">
             <Info size={18} />
-            <h2>Transparence des criteres</h2>
+            <h2>Traduction des criteres en valeurs</h2>
           </div>
           <div className="criterion-cards">
-            {selectedTerritory.criterionScores.map((criterionScore) => (
+            {activeCriteria.map((criterionScore) => (
               <article className="criterion-card" id={`criterion-${criterionScore.criterion.key}`} key={criterionScore.criterion.key}>
                 <div>
                   <p className="eyebrow">{criterionScore.criterion.category}</p>
                   <h3>{criterionScore.criterion.name}</h3>
                   <p>{criterionScore.criterion.description}</p>
                 </div>
-                <strong>{criterionScore.score === null ? "n/a" : Math.round(criterionScore.score)}</strong>
+                <strong>{criterionScore.score10 === null ? "n/a" : `${criterionScore.score10}/10`}</strong>
+                <p className={criterionScore.outsidePreciseInterval ? "interval-warning" : "interval-ok"}>
+                  {describeIntervalStatus(criterionScore)}
+                </p>
                 <ul>
                   {extractIndicators(criterionScore.result).map((indicatorKey) => (
                     <li key={indicatorKey}>
@@ -249,6 +429,163 @@ export function App() {
         </section>
       </section>
     </main>
+  );
+}
+
+function CriterionControl({
+  criterion,
+  setting,
+  onChange,
+}: {
+  criterion: Criterion;
+  setting: CriterionSetting;
+  onChange: (setting: CriterionSetting) => void;
+}) {
+  const spec = preciseControls[criterion.key];
+
+  return (
+    <article className={`criterion-control ${setting.enabled ? "" : "is-disabled"}`}>
+      <label className="criterion-toggle">
+        <input
+          checked={setting.enabled}
+          type="checkbox"
+          onChange={(event) => onChange({ ...setting, enabled: event.target.checked })}
+        />
+        <span>
+          <strong>{criterion.name}</strong>
+          <small>{criterion.category}</small>
+        </span>
+      </label>
+
+      {setting.enabled ? (
+        <div className="criterion-settings">
+          <label className="precision-control">
+            <span>Importance</span>
+            <input
+              max="10"
+              min="1"
+              step="1"
+              type="range"
+              value={setting.priority}
+              onChange={(event) => onChange({ ...setting, priority: Number(event.target.value) })}
+            />
+            <em>{setting.priority}/10</em>
+          </label>
+
+          {spec ? <PreciseControl spec={spec} setting={setting} onChange={onChange} /> : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function PreciseControl({
+  spec,
+  setting,
+  onChange,
+}: {
+  spec: PreciseControlSpec;
+  setting: CriterionSetting;
+  onChange: (setting: CriterionSetting) => void;
+}) {
+  const indicator = indicatorByKey.get(spec.indicator);
+
+  if (spec.mode === "categoryMax") {
+    return (
+      <label className="precision-control">
+        <span>{spec.label}</span>
+        <select
+          value={setting.categoryValue ?? spec.defaultValue}
+          onChange={(event) => onChange({ ...setting, categoryValue: event.target.value })}
+        >
+          {spec.categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <small>{spec.helper}</small>
+      </label>
+    );
+  }
+
+  if (spec.mode === "range") {
+    return (
+      <div className="precision-control">
+        <span>{spec.label}</span>
+        <div className="range-pair">
+          <label>
+            min
+            <input
+              max={setting.maxValue ?? spec.defaultMax}
+              min={spec.min}
+              step={spec.step}
+              type="number"
+              value={setting.minValue ?? spec.defaultMin}
+              onChange={(event) => onChange({ ...setting, minValue: Number(event.target.value) })}
+            />
+          </label>
+          <label>
+            max
+            <input
+              max={spec.max}
+              min={setting.minValue ?? spec.defaultMin}
+              step={spec.step}
+              type="number"
+              value={setting.maxValue ?? spec.defaultMax}
+              onChange={(event) => onChange({ ...setting, maxValue: Number(event.target.value) })}
+            />
+          </label>
+        </div>
+        <em>
+          {formatValue(setting.minValue ?? spec.defaultMin, indicator?.unit)} -{" "}
+          {formatValue(setting.maxValue ?? spec.defaultMax, indicator?.unit)}
+        </em>
+        <small>{spec.helper}</small>
+      </div>
+    );
+  }
+
+  return (
+    <label className="precision-control">
+      <span>{spec.label}</span>
+      <input
+        max={spec.max}
+        min={spec.min}
+        step={spec.step}
+        type="range"
+        value={setting.value ?? spec.defaultValue}
+        onChange={(event) => onChange({ ...setting, value: Number(event.target.value) })}
+      />
+      <em>{formatValue(setting.value ?? spec.defaultValue, indicator?.unit)}</em>
+      <small>{spec.helper}</small>
+    </label>
+  );
+}
+
+function CityRankingStrip({
+  territories,
+  selectedCode,
+  onSelect,
+}: {
+  territories: TerritoryScore[];
+  selectedCode: string;
+  onSelect: (code: string) => void;
+}) {
+  return (
+    <div className="city-strip" aria-label="Classement des villes candidates">
+      {territories.slice(0, 5).map((territory, index) => (
+        <button
+          className={`city-pill ${territory.code === selectedCode ? "is-selected" : ""}`}
+          key={territory.code}
+          onClick={() => onSelect(territory.code)}
+        >
+          <span>#{index + 1}</span>
+          <strong>{territory.name}</strong>
+          <em>{territory.globalScore10}/10</em>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -273,7 +610,7 @@ function CandidateMap({
       return;
     }
 
-    mapRef.current = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: containerRef.current,
       style: {
         version: 8,
@@ -298,16 +635,34 @@ function CandidateMap({
       attributionControl: false,
     });
 
-    mapRef.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    mapRef.current.addControl(new maplibregl.AttributionControl({ compact: true }));
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }));
+    map.on("load", () => {
+      ensureSuitabilityShader(map);
+      updateSuitabilityShader(map, territories);
+    });
+    mapRef.current = map;
 
     return () => {
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+    if (map.isStyleLoaded()) {
+      ensureSuitabilityShader(map);
+      updateSuitabilityShader(map, territories);
+    } else {
+      map.once("load", () => updateSuitabilityShader(map, territories));
+    }
+  }, [territories]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -321,7 +676,7 @@ function CandidateMap({
       markerElement.type = "button";
       markerElement.className = `map-marker ${territory.code === selectedCode ? "is-selected" : ""}`;
       markerElement.style.backgroundColor = scoreColor(territory.globalScore);
-      markerElement.innerHTML = `<strong>${Math.round(territory.globalScore)}</strong><span>${territory.name}</span>`;
+      markerElement.innerHTML = `<strong>${territory.globalScore10}/10</strong><span>${territory.name}</span>`;
       markerElement.addEventListener("click", () => onSelectRef.current(territory.code));
 
       return new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
@@ -344,14 +699,14 @@ function CandidateMap({
   return <div className="map-container" ref={containerRef} />;
 }
 
-function CriterionExplanation({ score, values }: { score: TerritoryScore["criterionScores"][number]; values: TerritorySample["values"] }) {
+function CriterionExplanation({ score, values }: { score: CriterionScore; values: TerritorySample["values"] }) {
   const indicatorKeys = extractIndicators(score.result);
 
   return (
     <div className="explanation-card">
       <p className="eyebrow">Calcul du meilleur critere</p>
       <h4>{score.criterion.name}</h4>
-      <p>{score.criterion.description}</p>
+      <p>{describeIntervalStatus(score)}</p>
       <ul>
         {indicatorKeys.map((indicatorKey) => (
           <li key={indicatorKey}>
@@ -374,15 +729,54 @@ function InfoCard({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-function scoreTerritory(territory: TerritorySample, weights: Record<string, number>): TerritoryScore {
+function createInitialSetting(criterion: Criterion): CriterionSetting {
+  const spec = preciseControls[criterion.key];
+  const base = {
+    enabled: true,
+    priority: clamp(Math.round(criterion.default_weight * 5), 1, 10),
+  };
+
+  if (!spec) {
+    return base;
+  }
+  if (spec.mode === "range") {
+    return {
+      ...base,
+      minValue: spec.defaultMin,
+      maxValue: spec.defaultMax,
+    };
+  }
+  if (spec.mode === "categoryMax") {
+    return {
+      ...base,
+      categoryValue: spec.defaultValue,
+    };
+  }
+  return {
+    ...base,
+    value: spec.defaultValue,
+  };
+}
+
+function scoreTerritory(territory: TerritorySample, settings: Record<string, CriterionSetting>): TerritoryScore {
   const criterionScores = criteria.map((criterion) => {
+    const setting = settings[criterion.key] ?? createInitialSetting(criterion);
     const result = scoreRule(criterion.rule, territory.values);
+    const preciseScore = scorePreciseInterval(criterion, territory.values, setting);
+    const rawScore = preciseScore ? preciseScore.score : result.score;
+    const score = setting.enabled ? rawScore : null;
+
     return {
       criterion,
-      score: result.score,
-      weight: weights[criterion.key] ?? criterion.default_weight,
+      score,
+      score10: score === null ? null : toTenPointScore(score),
+      priority: setting.priority,
+      enabled: setting.enabled,
       missing: result.missing,
       excluded: result.excluded,
+      outsidePreciseInterval: preciseScore ? !preciseScore.inInterval : false,
+      preciseIndicator: preciseScore?.indicator,
+      preciseValue: preciseScore?.value,
       result,
     };
   });
@@ -393,18 +787,18 @@ function scoreTerritory(territory: TerritorySample, weights: Record<string, numb
   const categoryWeights = new Map<string, number>();
 
   for (const criterionScore of criterionScores) {
-    if (criterionScore.score === null || criterionScore.weight <= 0) {
+    if (!criterionScore.enabled || criterionScore.score === null || criterionScore.priority <= 0) {
       continue;
     }
-    weightedTotal += criterionScore.score * criterionScore.weight;
-    totalWeight += criterionScore.weight;
+    weightedTotal += criterionScore.score * criterionScore.priority;
+    totalWeight += criterionScore.priority;
     categoryTotals.set(
       criterionScore.criterion.category,
-      (categoryTotals.get(criterionScore.criterion.category) ?? 0) + criterionScore.score * criterionScore.weight,
+      (categoryTotals.get(criterionScore.criterion.category) ?? 0) + criterionScore.score * criterionScore.priority,
     );
     categoryWeights.set(
       criterionScore.criterion.category,
-      (categoryWeights.get(criterionScore.criterion.category) ?? 0) + criterionScore.weight,
+      (categoryWeights.get(criterionScore.criterion.category) ?? 0) + criterionScore.priority,
     );
   }
 
@@ -414,13 +808,102 @@ function scoreTerritory(territory: TerritorySample, weights: Record<string, numb
       round(score / (categoryWeights.get(category) ?? 1)),
     ]),
   );
+  const globalScore = totalWeight === 0 ? 0 : round(weightedTotal / totalWeight);
 
   return {
     ...territory,
-    globalScore: totalWeight === 0 ? 0 : round(weightedTotal / totalWeight),
+    globalScore,
+    globalScore10: toTenPointScore(globalScore),
+    inInterestingInterval: criterionScores
+      .filter((criterionScore) => criterionScore.enabled)
+      .every((criterionScore) => !criterionScore.outsidePreciseInterval),
     categoryScores,
     criterionScores,
   };
+}
+
+function scorePreciseInterval(
+  criterion: Criterion,
+  values: TerritorySample["values"],
+  setting: CriterionSetting,
+): { score: number; inInterval: boolean; indicator: string; value: string | number } | null {
+  const spec = preciseControls[criterion.key];
+  if (!spec) {
+    return null;
+  }
+
+  const rawValue = values[spec.indicator];
+  if (rawValue === undefined || rawValue === null || rawValue === "") {
+    return {
+      score: 0,
+      inInterval: false,
+      indicator: spec.indicator,
+      value: "n/a",
+    };
+  }
+
+  if (spec.mode === "categoryMax") {
+    const value = String(rawValue).toLowerCase();
+    const currentRank = spec.categories.indexOf(value);
+    const maxRank = spec.categories.indexOf(setting.categoryValue ?? spec.defaultValue);
+    const inInterval = currentRank >= 0 && currentRank <= maxRank;
+    return {
+      score: inInterval ? clamp(100 - currentRank * 22) : 10,
+      inInterval,
+      indicator: spec.indicator,
+      value: rawValue,
+    };
+  }
+
+  const numericValue = numberValue(rawValue);
+  if (numericValue === null) {
+    return {
+      score: 0,
+      inInterval: false,
+      indicator: spec.indicator,
+      value: rawValue,
+    };
+  }
+
+  if (spec.mode === "max") {
+    const maxValue = setting.value ?? spec.defaultValue;
+    return {
+      score: clamp(((maxValue - numericValue) / (maxValue - spec.min)) * 100),
+      inInterval: numericValue <= maxValue,
+      indicator: spec.indicator,
+      value: numericValue,
+    };
+  }
+
+  if (spec.mode === "min") {
+    const minValue = setting.value ?? spec.defaultValue;
+    return {
+      score: clamp(((numericValue - minValue) / (spec.max - minValue)) * 100),
+      inInterval: numericValue >= minValue,
+      indicator: spec.indicator,
+      value: numericValue,
+    };
+  }
+
+  if (spec.mode === "range") {
+    const minValue = setting.minValue ?? spec.defaultMin;
+    const maxValue = setting.maxValue ?? spec.defaultMax;
+    const inInterval = numericValue >= minValue && numericValue <= maxValue;
+    const score = inInterval
+      ? 100
+      : numericValue < minValue
+        ? ((numericValue - spec.min) / (minValue - spec.min)) * 100
+        : ((spec.max - numericValue) / (spec.max - maxValue)) * 100;
+
+    return {
+      score: clamp(score),
+      inInterval,
+      indicator: spec.indicator,
+      value: numericValue,
+    };
+  }
+
+  return null;
 }
 
 function scoreRule(rule: Rule, values: TerritorySample["values"]): ScoreResult {
@@ -508,6 +991,93 @@ function scoreRule(rule: Rule, values: TerritorySample["values"]): ScoreResult {
   };
 }
 
+function ensureSuitabilityShader(map: maplibregl.Map) {
+  if (!map.getSource("suitability")) {
+    map.addSource("suitability", {
+      type: "geojson",
+      data: createSuitabilityGeoJson([]),
+    });
+  }
+
+  if (!map.getLayer("suitability-shader")) {
+    map.addLayer({
+      id: "suitability-shader",
+      type: "circle",
+      source: "suitability",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 58, 7, 145],
+        "circle-color": [
+          "interpolate",
+          ["linear"],
+          ["get", "score"],
+          0,
+          "#dc2626",
+          35,
+          "#f97316",
+          55,
+          "#facc15",
+          75,
+          "#22c55e",
+          100,
+          "#15803d",
+        ],
+        "circle-opacity": ["case", ["==", ["get", "inInterval"], true], 0.58, 0.25],
+        "circle-blur": 0.72,
+      },
+    });
+  }
+
+  if (!map.getLayer("candidate-islands")) {
+    map.addLayer({
+      id: "candidate-islands",
+      type: "circle",
+      source: "suitability",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 8, 7, 18],
+        "circle-color": [
+          "interpolate",
+          ["linear"],
+          ["get", "score"],
+          0,
+          "#dc2626",
+          55,
+          "#facc15",
+          100,
+          "#15803d",
+        ],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+        "circle-opacity": 0.88,
+      },
+    });
+  }
+}
+
+function updateSuitabilityShader(map: maplibregl.Map, scores: TerritoryScore[]) {
+  const source = map.getSource("suitability") as maplibregl.GeoJSONSource | undefined;
+  source?.setData(createSuitabilityGeoJson(scores));
+}
+
+function createSuitabilityGeoJson(scores: TerritoryScore[]) {
+  return {
+    type: "FeatureCollection",
+    features: scores.map((territory) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [territory.longitude, territory.latitude],
+      },
+      properties: {
+        code: territory.code,
+        name: territory.name,
+        score: territory.globalScore,
+        score10: territory.globalScore10,
+        inInterval: territory.inInterestingInterval,
+      },
+    })),
+  } as GeoJSON.FeatureCollection;
+}
+
 function requireRuleField<T>(value: T | undefined, ruleType: string, field: string): T {
   if (value === undefined) {
     throw new Error(`Rule ${ruleType} is missing field ${field}`);
@@ -528,6 +1098,17 @@ function sourceName(indicatorKey: string) {
     return "source inconnue";
   }
   return sourceByKey.get(indicator.source)?.name ?? indicator.source;
+}
+
+function describeIntervalStatus(score: CriterionScore) {
+  if (!score.preciseIndicator) {
+    return "Score calcule avec la regle declarative du catalogue.";
+  }
+  const indicator = indicatorByKey.get(score.preciseIndicator);
+  const formatted = formatValue(score.preciseValue, indicator?.unit);
+  return score.outsidePreciseInterval
+    ? `Valeur mesuree ${formatted}: hors intervalle selectionne.`
+    : `Valeur mesuree ${formatted}: dans l'intervalle selectionne.`;
 }
 
 function formatValue(value: string | number | undefined, unit?: string) {
@@ -579,6 +1160,10 @@ function missing(indicator: string): ScoreResult {
 
 function scored(score: number, indicator: string, value: string | number): ScoreResult {
   return { score: round(clamp(score)), indicator, value, missing: false, excluded: false };
+}
+
+function toTenPointScore(score: number) {
+  return clamp(Math.round(score / 10), 1, 10);
 }
 
 function round(value: number) {
