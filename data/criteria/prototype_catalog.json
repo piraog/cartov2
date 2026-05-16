@@ -1,0 +1,534 @@
+{
+  "version": "0.1.0",
+  "territory_level": "commune",
+  "sources": [
+    {
+      "key": "insee",
+      "name": "INSEE",
+      "provider": "Institut national de la statistique et des etudes economiques",
+      "license": "Licence ouverte",
+      "url": "https://www.insee.fr"
+    },
+    {
+      "key": "dvf",
+      "name": "Demandes de valeurs foncieres",
+      "provider": "Etalab / DGFiP",
+      "license": "Licence ouverte",
+      "url": "https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/"
+    },
+    {
+      "key": "sncf_osm",
+      "name": "SNCF + OpenStreetMap",
+      "provider": "SNCF Open Data, OpenStreetMap, OSRM",
+      "license": "ODbL / licences sources",
+      "url": "https://ressources.data.sncf.com"
+    },
+    {
+      "key": "culture",
+      "name": "Culture et evenements",
+      "provider": "Ministere de la Culture, OpenAgenda, Wikidata",
+      "license": "Licences sources",
+      "url": "https://data.culture.gouv.fr"
+    },
+    {
+      "key": "agriculture",
+      "name": "Agriculture et terroir",
+      "provider": "RPG, INAO, Corine Land Cover, IGN",
+      "license": "Licences sources",
+      "url": "https://www.data.gouv.fr"
+    },
+    {
+      "key": "climat",
+      "name": "Climat",
+      "provider": "Meteo-France, Copernicus, Open-Meteo pour prototype",
+      "license": "Licences sources",
+      "url": "https://meteofrance.com"
+    },
+    {
+      "key": "georisques",
+      "name": "Georisques",
+      "provider": "Ministere de la Transition ecologique",
+      "license": "Licence ouverte",
+      "url": "https://www.georisques.gouv.fr"
+    }
+  ],
+  "indicators": [
+    {
+      "key": "prix_m2_median",
+      "name": "Prix immobilier median au m2",
+      "category": "budget",
+      "unit": "eur_m2",
+      "source": "dvf",
+      "geography_level": "commune"
+    },
+    {
+      "key": "temps_total_paris_train_voiture_min",
+      "name": "Temps total Paris en train puis voiture",
+      "category": "accessibilite",
+      "unit": "minutes",
+      "source": "sncf_osm",
+      "geography_level": "commune"
+    },
+    {
+      "key": "temps_voiture_gare_plus_proche_min",
+      "name": "Temps voiture vers gare la plus proche",
+      "category": "accessibilite",
+      "unit": "minutes",
+      "source": "sncf_osm",
+      "geography_level": "commune"
+    },
+    {
+      "key": "temps_voiture_ville_30000_min",
+      "name": "Temps voiture vers ville de plus de 30 000 habitants",
+      "category": "accessibilite",
+      "unit": "minutes",
+      "source": "insee",
+      "geography_level": "commune"
+    },
+    {
+      "key": "densite_population",
+      "name": "Densite de population",
+      "category": "cadre_de_vie",
+      "unit": "hab_km2",
+      "source": "insee",
+      "geography_level": "commune"
+    },
+    {
+      "key": "part_residences_secondaires",
+      "name": "Part de residences secondaires",
+      "category": "cadre_de_vie",
+      "unit": "percent",
+      "source": "insee",
+      "geography_level": "commune"
+    },
+    {
+      "key": "proximite_nature_score",
+      "name": "Proximite mer, montagne ou foret",
+      "category": "nature",
+      "unit": "score",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "risque_inondation_niveau",
+      "name": "Niveau de risque inondation",
+      "category": "risques",
+      "unit": "category",
+      "source": "georisques",
+      "geography_level": "commune"
+    },
+    {
+      "key": "equipements_services_30km",
+      "name": "Equipements et services accessibles a 30 km",
+      "category": "services",
+      "unit": "count",
+      "source": "insee",
+      "geography_level": "commune"
+    },
+    {
+      "key": "festivals_30km",
+      "name": "Festivals recurrents dans un rayon de 30 km",
+      "category": "culture",
+      "unit": "count",
+      "source": "culture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "lieux_culturels_30km",
+      "name": "Lieux culturels dans un rayon de 30 km",
+      "category": "culture",
+      "unit": "count",
+      "source": "culture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "monuments_historiques_30km",
+      "name": "Monuments historiques dans un rayon de 30 km",
+      "category": "culture",
+      "unit": "count",
+      "source": "culture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "presence_zone_aoc_viticole",
+      "name": "Presence en zone AOC/AOP viticole",
+      "category": "agriculture",
+      "unit": "boolean",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "surface_vigne_pct",
+      "name": "Part de surfaces viticoles",
+      "category": "agriculture",
+      "unit": "percent",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "surface_agricole_pct",
+      "name": "Part de surface agricole",
+      "category": "agriculture",
+      "unit": "percent",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "altitude_moyenne",
+      "name": "Altitude moyenne",
+      "category": "agriculture",
+      "unit": "meters",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "pente_moyenne",
+      "name": "Pente moyenne",
+      "category": "agriculture",
+      "unit": "percent",
+      "source": "agriculture",
+      "geography_level": "commune"
+    },
+    {
+      "key": "temperature_moyenne_annuelle",
+      "name": "Temperature moyenne annuelle",
+      "category": "climat",
+      "unit": "celsius",
+      "source": "climat",
+      "geography_level": "commune"
+    },
+    {
+      "key": "jours_gel_annuels",
+      "name": "Nombre annuel de jours de gel",
+      "category": "climat",
+      "unit": "days",
+      "source": "climat",
+      "geography_level": "commune"
+    },
+    {
+      "key": "ensoleillement_annuel_heures",
+      "name": "Ensoleillement annuel",
+      "category": "climat",
+      "unit": "hours",
+      "source": "climat",
+      "geography_level": "commune"
+    }
+  ],
+  "criteria": [
+    {
+      "key": "budget_immobilier",
+      "name": "Budget immobilier",
+      "category": "Budget",
+      "description": "Favorise les communes ou le prix median au m2 est plus accessible.",
+      "default_weight": 1,
+      "rule": {
+        "type": "lower_is_better",
+        "indicator": "prix_m2_median",
+        "min_value": 1200,
+        "max_value": 6500,
+        "clamp": true
+      }
+    },
+    {
+      "key": "accessibilite_paris",
+      "name": "Isochrone train Paris",
+      "category": "Accessibilite",
+      "description": "Score le temps total depuis Paris en train puis voiture.",
+      "default_weight": 1,
+      "rule": {
+        "type": "lower_is_better",
+        "indicator": "temps_total_paris_train_voiture_min",
+        "min_value": 60,
+        "max_value": 360,
+        "clamp": true
+      },
+      "exclusion": {
+        "max_value": 420
+      }
+    },
+    {
+      "key": "acces_gare",
+      "name": "Acces a une gare",
+      "category": "Accessibilite",
+      "description": "Favorise les communes proches d'une gare en voiture.",
+      "default_weight": 0.8,
+      "rule": {
+        "type": "steps",
+        "indicator": "temps_voiture_gare_plus_proche_min",
+        "steps": [
+          { "max": 10, "score": 100 },
+          { "max": 20, "score": 80 },
+          { "max": 35, "score": 55 },
+          { "max": 60, "score": 25 },
+          { "score": 0 }
+        ]
+      }
+    },
+    {
+      "key": "proximite_ville_moyenne",
+      "name": "Ville de plus de 30 000 habitants",
+      "category": "Accessibilite",
+      "description": "Cherche un equilibre entre calme et acces a une ville de services.",
+      "default_weight": 0.7,
+      "rule": {
+        "type": "ideal_range",
+        "indicator": "temps_voiture_ville_30000_min",
+        "min_ideal": 15,
+        "max_ideal": 45,
+        "min_acceptable": 0,
+        "max_acceptable": 90
+      }
+    },
+    {
+      "key": "densite_equilibree",
+      "name": "Densite equilibree",
+      "category": "Cadre de vie",
+      "description": "Evite les zones trop isolees et les zones trop denses.",
+      "default_weight": 0.5,
+      "rule": {
+        "type": "ideal_range",
+        "indicator": "densite_population",
+        "min_ideal": 30,
+        "max_ideal": 180,
+        "min_acceptable": 5,
+        "max_acceptable": 1200
+      }
+    },
+    {
+      "key": "residences_secondaires",
+      "name": "Presence de residences secondaires",
+      "category": "Cadre de vie",
+      "description": "Repere les communes deja attractives pour les residences secondaires.",
+      "default_weight": 0.4,
+      "rule": {
+        "type": "higher_is_better",
+        "indicator": "part_residences_secondaires",
+        "min_value": 2,
+        "max_value": 45,
+        "clamp": true
+      }
+    },
+    {
+      "key": "nature",
+      "name": "Proximite nature",
+      "category": "Nature",
+      "description": "Favorise la proximite mer, montagne ou foret.",
+      "default_weight": 0.8,
+      "rule": {
+        "type": "higher_is_better",
+        "indicator": "proximite_nature_score",
+        "min_value": 0,
+        "max_value": 100,
+        "clamp": true
+      }
+    },
+    {
+      "key": "risque_inondation",
+      "name": "Risque inondation",
+      "category": "Risques",
+      "description": "Penalise les communes exposees a un risque d'inondation eleve.",
+      "default_weight": 0.9,
+      "rule": {
+        "type": "categorical",
+        "indicator": "risque_inondation_niveau",
+        "mapping": {
+          "aucun": 100,
+          "faible": 85,
+          "moyen": 45,
+          "fort": 5
+        },
+        "exclude_if": ["fort"]
+      }
+    },
+    {
+      "key": "services",
+      "name": "Services et equipements",
+      "category": "Services",
+      "description": "Favorise les territoires equipes en services de proximite.",
+      "default_weight": 0.7,
+      "rule": {
+        "type": "higher_is_better",
+        "indicator": "equipements_services_30km",
+        "min_value": 20,
+        "max_value": 250,
+        "clamp": true
+      }
+    },
+    {
+      "key": "rayonnement_culturel",
+      "name": "Rayonnement culturel",
+      "category": "Culture",
+      "description": "Combine festivals, lieux culturels et patrimoine dans un rayon de 30 km.",
+      "default_weight": 0.7,
+      "rule": {
+        "type": "weighted_composite",
+        "components": [
+          {
+            "indicator": "festivals_30km",
+            "weight": 0.35,
+            "rule": { "type": "higher_is_better", "min_value": 0, "max_value": 8, "clamp": true }
+          },
+          {
+            "indicator": "lieux_culturels_30km",
+            "weight": 0.35,
+            "rule": { "type": "higher_is_better", "min_value": 0, "max_value": 60, "clamp": true }
+          },
+          {
+            "indicator": "monuments_historiques_30km",
+            "weight": 0.30,
+            "rule": { "type": "higher_is_better", "min_value": 0, "max_value": 80, "clamp": true }
+          }
+        ]
+      }
+    },
+    {
+      "key": "potentiel_viticole",
+      "name": "Potentiel agricole et viticole",
+      "category": "Agriculture",
+      "description": "Proxy combinant AOC, surfaces de vignes, surface agricole, altitude, pente et climat.",
+      "default_weight": 0.6,
+      "rule": {
+        "type": "weighted_composite",
+        "components": [
+          {
+            "indicator": "presence_zone_aoc_viticole",
+            "weight": 0.25,
+            "rule": { "type": "categorical", "mapping": { "true": 100, "false": 0 } }
+          },
+          {
+            "indicator": "surface_vigne_pct",
+            "weight": 0.20,
+            "rule": { "type": "higher_is_better", "min_value": 0, "max_value": 25, "clamp": true }
+          },
+          {
+            "indicator": "surface_agricole_pct",
+            "weight": 0.15,
+            "rule": { "type": "higher_is_better", "min_value": 5, "max_value": 80, "clamp": true }
+          },
+          {
+            "indicator": "altitude_moyenne",
+            "weight": 0.10,
+            "rule": { "type": "ideal_range", "min_ideal": 80, "max_ideal": 450, "min_acceptable": 0, "max_acceptable": 900 }
+          },
+          {
+            "indicator": "pente_moyenne",
+            "weight": 0.10,
+            "rule": { "type": "ideal_range", "min_ideal": 3, "max_ideal": 18, "min_acceptable": 0, "max_acceptable": 35 }
+          },
+          {
+            "indicator": "temperature_moyenne_annuelle",
+            "weight": 0.20,
+            "rule": { "type": "ideal_range", "min_ideal": 11, "max_ideal": 16, "min_acceptable": 8, "max_acceptable": 21 }
+          }
+        ]
+      }
+    },
+    {
+      "key": "climat_confortable",
+      "name": "Climat confortable",
+      "category": "Climat",
+      "description": "Favorise un climat tempere, lumineux et limite en jours de gel.",
+      "default_weight": 0.7,
+      "rule": {
+        "type": "weighted_composite",
+        "components": [
+          {
+            "indicator": "temperature_moyenne_annuelle",
+            "weight": 0.45,
+            "rule": { "type": "ideal_range", "min_ideal": 12, "max_ideal": 17, "min_acceptable": 7, "max_acceptable": 22 }
+          },
+          {
+            "indicator": "ensoleillement_annuel_heures",
+            "weight": 0.35,
+            "rule": { "type": "higher_is_better", "min_value": 1500, "max_value": 2800, "clamp": true }
+          },
+          {
+            "indicator": "jours_gel_annuels",
+            "weight": 0.20,
+            "rule": { "type": "lower_is_better", "min_value": 5, "max_value": 90, "clamp": true }
+          }
+        ]
+      }
+    }
+  ],
+  "sample_territories": [
+    {
+      "code": "30202",
+      "name": "Uzes",
+      "values": {
+        "prix_m2_median": 3650,
+        "temps_total_paris_train_voiture_min": 205,
+        "temps_voiture_gare_plus_proche_min": 25,
+        "temps_voiture_ville_30000_min": 32,
+        "densite_population": 270,
+        "part_residences_secondaires": 12,
+        "proximite_nature_score": 78,
+        "risque_inondation_niveau": "moyen",
+        "equipements_services_30km": 180,
+        "festivals_30km": 5,
+        "lieux_culturels_30km": 45,
+        "monuments_historiques_30km": 70,
+        "presence_zone_aoc_viticole": "true",
+        "surface_vigne_pct": 14,
+        "surface_agricole_pct": 48,
+        "altitude_moyenne": 130,
+        "pente_moyenne": 7,
+        "temperature_moyenne_annuelle": 14.8,
+        "jours_gel_annuels": 20,
+        "ensoleillement_annuel_heures": 2600
+      }
+    },
+    {
+      "code": "21231",
+      "name": "Dijon",
+      "values": {
+        "prix_m2_median": 3100,
+        "temps_total_paris_train_voiture_min": 105,
+        "temps_voiture_gare_plus_proche_min": 8,
+        "temps_voiture_ville_30000_min": 0,
+        "densite_population": 3800,
+        "part_residences_secondaires": 3,
+        "proximite_nature_score": 62,
+        "risque_inondation_niveau": "faible",
+        "equipements_services_30km": 260,
+        "festivals_30km": 4,
+        "lieux_culturels_30km": 90,
+        "monuments_historiques_30km": 95,
+        "presence_zone_aoc_viticole": "true",
+        "surface_vigne_pct": 8,
+        "surface_agricole_pct": 18,
+        "altitude_moyenne": 245,
+        "pente_moyenne": 4,
+        "temperature_moyenne_annuelle": 11.4,
+        "jours_gel_annuels": 55,
+        "ensoleillement_annuel_heures": 1850
+      }
+    },
+    {
+      "code": "64122",
+      "name": "Cambo-les-Bains",
+      "values": {
+        "prix_m2_median": 4200,
+        "temps_total_paris_train_voiture_min": 330,
+        "temps_voiture_gare_plus_proche_min": 12,
+        "temps_voiture_ville_30000_min": 25,
+        "densite_population": 320,
+        "part_residences_secondaires": 11,
+        "proximite_nature_score": 92,
+        "risque_inondation_niveau": "moyen",
+        "equipements_services_30km": 210,
+        "festivals_30km": 6,
+        "lieux_culturels_30km": 50,
+        "monuments_historiques_30km": 45,
+        "presence_zone_aoc_viticole": "false",
+        "surface_vigne_pct": 0,
+        "surface_agricole_pct": 42,
+        "altitude_moyenne": 70,
+        "pente_moyenne": 11,
+        "temperature_moyenne_annuelle": 14.2,
+        "jours_gel_annuels": 12,
+        "ensoleillement_annuel_heures": 2000
+      }
+    }
+  ]
+}

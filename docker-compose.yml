@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: carto_residence
+      POSTGRES_USER: carto
+      POSTGRES_PASSWORD: carto
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+
+  api:
+    image: python:3.12-slim
+    working_dir: /workspace
+    command: sh -c "pip install -e services/api && uvicorn app.main:app --host 0.0.0.0 --reload --app-dir services/api"
+    volumes:
+      - .:/workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
