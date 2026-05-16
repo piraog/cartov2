@@ -14,6 +14,8 @@ Dans le depot GitHub:
 
 Cette activation est un parametrage du depot, pas un serveur a administrer.
 
+Si le job GitHub Actions echoue avec `Ensure GitHub Pages has been enabled`, cela signifie que cette etape n'a pas encore ete faite.
+
 ### 2. Deployer
 
 Le workflow `.github/workflows/deploy-web.yml` construit automatiquement `apps/web` et publie `apps/web/dist`.
