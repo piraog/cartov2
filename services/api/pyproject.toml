@@ -1,0 +1,12 @@
+[project]
+name = "carto-residence-api"
+version = "0.1.0"
+description = "API and scoring engine for the Carto Residence prototype"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
