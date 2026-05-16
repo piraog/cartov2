@@ -57,3 +57,7 @@ python3 -m unittest discover -s tests
 - climat et temperatures moyennes.
 
 Voir `docs/v1-architecture.md` pour le plan V1 robuste.
+
+## Tester depuis un telephone
+
+Le prototype web peut etre publie sans serveur via GitHub Pages. Voir `docs/mobile-testing.md`.
