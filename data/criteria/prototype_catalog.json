@@ -455,6 +455,9 @@
     {
       "code": "30202",
       "name": "Uzes",
+      "latitude": 44.0121,
+      "longitude": 4.4197,
+      "summary": "Culture, terroir viticole et accessibilite correcte depuis le couloir rhodanien.",
       "values": {
         "prix_m2_median": 3650,
         "temps_total_paris_train_voiture_min": 205,
@@ -481,6 +484,9 @@
     {
       "code": "21231",
       "name": "Dijon",
+      "latitude": 47.322,
+      "longitude": 5.0415,
+      "summary": "Excellente connexion train, services denses, mais profil urbain plus marque.",
       "values": {
         "prix_m2_median": 3100,
         "temps_total_paris_train_voiture_min": 105,
@@ -507,6 +513,9 @@
     {
       "code": "64122",
       "name": "Cambo-les-Bains",
+      "latitude": 43.3586,
+      "longitude": -1.4014,
+      "summary": "Cadre naturel fort et climat agreable, avec un temps Paris plus long.",
       "values": {
         "prix_m2_median": 4200,
         "temps_total_paris_train_voiture_min": 330,
