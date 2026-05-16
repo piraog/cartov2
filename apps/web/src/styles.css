@@ -106,48 +106,120 @@ p {
   font-size: 1rem;
 }
 
+.panel-help {
+  margin: -6px 0 18px;
+  color: #d7e7f8;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .criteria-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
-.criterion {
+.criterion-control {
   display: grid;
-  gap: 8px;
-  padding-bottom: 12px;
+  gap: 12px;
+  padding: 14px;
   border-bottom: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 6%);
 }
 
-.criterion:last-child {
+.criterion-control:last-child {
   border-bottom: 0;
-  padding-bottom: 0;
 }
 
-.criterion span {
+.criterion-control.is-disabled {
+  opacity: 0.54;
+}
+
+.criterion-toggle,
+.criterion-toggle span {
   display: flex;
+}
+
+.criterion-toggle {
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.criterion-toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #60a5fa;
+}
+
+.criterion-toggle span {
+  flex: 1;
   justify-content: space-between;
   gap: 12px;
 }
 
-.criterion strong {
+.criterion-toggle strong {
   font-size: 0.95rem;
 }
 
-.criterion small {
+.criterion-toggle small {
   flex: 0 0 auto;
   text-align: right;
 }
 
-.criterion input {
+.criterion-settings,
+.precision-control {
+  display: grid;
+  gap: 8px;
+}
+
+.precision-control span {
+  color: #e8f3ff;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.precision-control input[type="range"] {
   min-height: 28px;
   accent-color: #60a5fa;
 }
 
-.criterion em {
+.precision-control input[type="number"],
+.precision-control select {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 10px;
+  padding: 7px 9px;
+  background: rgb(15 32 51 / 72%);
+  color: #ffffff;
+}
+
+.precision-control em {
   justify-self: end;
   color: #bfdbfe;
   font-size: 0.82rem;
   font-style: normal;
+}
+
+.precision-control small {
+  color: #bad3ef;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.range-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.range-pair label {
+  display: grid;
+  gap: 4px;
+  color: #bad3ef;
+  font-size: 0.78rem;
 }
 
 .workspace {
@@ -250,6 +322,45 @@ p {
   background: linear-gradient(90deg, #dc2626, #ca8a04, #15803d);
 }
 
+.city-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.city-pill {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  text-align: left;
+}
+
+.city-pill.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 10px 30px rgb(37 99 235 / 14%);
+}
+
+.city-pill span,
+.city-pill em {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+.city-pill strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .map-container {
   width: 100%;
   height: min(66vh, 680px);
@@ -261,7 +372,7 @@ p {
 
 .map-marker {
   display: grid;
-  min-width: 104px;
+  min-width: 108px;
   padding: 9px 11px;
   border: 2px solid #ffffff;
   border-radius: 16px 16px 16px 4px;
@@ -277,7 +388,7 @@ p {
 }
 
 .map-marker strong {
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   line-height: 1;
 }
 
@@ -316,12 +427,12 @@ p {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 104px;
+  width: 112px;
   height: 104px;
   border: 11px solid #bfdbfe;
   border-radius: 999px;
   color: #1d4ed8;
-  font-size: 2rem;
+  font-size: 1.65rem;
   font-weight: 900;
 }
 
@@ -414,6 +525,23 @@ p {
   font-size: 1.15rem;
 }
 
+.interval-ok,
+.interval-warning {
+  padding: 9px 11px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+
+.interval-ok {
+  background: #dcfce7;
+  color: #166534 !important;
+}
+
+.interval-warning {
+  background: #fee2e2;
+  color: #991b1b !important;
+}
+
 .criterion-card h3 {
   margin: 6px 0;
   color: #0f172a;
@@ -471,6 +599,18 @@ p {
     gap: 6px;
   }
 
+  .city-strip {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .city-pill {
+    min-width: 154px;
+    scroll-snap-align: start;
+  }
+
   .hero {
     display: grid;
   }
@@ -507,7 +647,7 @@ p {
   }
 
   .map-marker strong {
-    font-size: 1.1rem;
+    font-size: 0.92rem;
   }
 
   .map-marker span {
@@ -519,7 +659,7 @@ p {
   }
 
   .score-ring {
-    width: 86px;
+    width: 94px;
     height: 86px;
     border-width: 9px;
     font-size: 1.7rem;
